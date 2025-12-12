@@ -1,0 +1,32 @@
+.program dshot
+.side_set 1
+
+.wrap_target
+bitloop:
+    out x,1     side 0
+    jmp !x dozero     side 1 [1]
+doone:
+    nop     side 1 [1]
+    jmp bitloop     side 0
+dozero:
+    nop     side 0 [2]
+.wrap
+
+% c-sdk {
+    #include "hardware/clocks.h"
+
+    void dshot_program_init(PIO pio, uint sm, uint offset, uint pins) {
+        pio_gpio_init(pio, pins);
+        pio_sm_set_consecutive_pindirs(pio, sm, pins, 1, true);
+
+        pio_sm_config c = dshot_program_get_default_config(offset);
+        sm_config_set_sideset_pins(&c, pins); 
+        sm_config_set_out_shift(&c, false, true, 16);
+
+        float div = clock_get_hz(clk_sys) / (1800000);
+        sm_config_set_clkdiv(&c, div);
+
+        pio_sm_init(pio, sm, offset, &c);
+        pio_sm_set_enabled(pio, sm, true);
+    }
+%}
