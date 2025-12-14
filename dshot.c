@@ -4,7 +4,9 @@
 #include "dshot.pio.h"
 
 int main() {
-
+    gpio_init(15);
+    gpio_set_dir(15, GPIO_OUT);
+    gpio_put(15, 0);
 
     PIO pio;
     uint sm;
@@ -15,15 +17,24 @@ int main() {
 
     dshot_program_init(pio, sm, offset, 0);
 
-    uint16_t data = 0xC16B;
-    uint32_t packet = (uint32_t)data << 16;
-
-    for (int i = 0;i < 8000;i++) {
+    for (int i = 0;i < 2000;i++) {
         pio_sm_put_blocking(pio, sm, 0x00000000);
-        sleep_us(250);
+        sleep_ms(1);
+    }
+    for (int i = 0;i < 10;i++) {
+        pio_sm_put_blocking(pio, sm, (uint32_t)0x0145 << 16);
+        sleep_ms(1);
     }
     while (true) {
-        pio_sm_put_blocking(pio, sm, packet);
-        sleep_us(250);
+        for (int i = 0;i < 10000;i++) {
+            gpio_put(15, 1);
+            pio_sm_put_blocking(pio, sm, (uint32_t)0x4466 << 16);
+            sleep_ms(1);
+        }
+        for (int i = 0;i < 10000;i++) {
+            gpio_put(15, 1);
+            pio_sm_put_blocking(pio, sm, (uint32_t)0xC16B << 16);
+            sleep_ms(1);
+        }
     }
 }
